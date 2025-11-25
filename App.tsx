@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Tab } from './types';
 import BottomNav from './components/BottomNav';
 import Closet from './pages/Closet';
@@ -7,7 +7,8 @@ import Stylist from './pages/Stylist';
 import Mirror from './pages/Mirror';
 import Profile from './pages/Profile';
 import { AnimatePresence, motion } from 'framer-motion';
-import { CheckCircle2 } from 'lucide-react';
+import { CheckCircle2, Loader2 } from 'lucide-react';
+import { useStore } from './store';
 
 // Global Toast Context can be used here or simple state for demo
 export const ToastContext = React.createContext({ showToast: (msg: string) => {} });
@@ -15,6 +16,12 @@ export const ToastContext = React.createContext({ showToast: (msg: string) => {}
 const App: React.FC = () => {
   const [activeTab, setActiveTab] = useState<Tab>(Tab.CLOSET);
   const [toast, setToast] = useState<{ show: boolean; message: string }>({ show: false, message: '' });
+  
+  const { initializeData, isLoading } = useStore();
+
+  useEffect(() => {
+    initializeData();
+  }, []);
 
   const showToast = (message: string) => {
     setToast({ show: true, message });
@@ -37,6 +44,17 @@ const App: React.FC = () => {
         return <Closet />;
     }
   };
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-cream flex items-center justify-center">
+        <div className="flex flex-col items-center gap-4">
+          <Loader2 className="animate-spin text-latte" size={48} />
+          <p className="text-deep-brown font-bold text-lg">Dolap Hazırlanıyor...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <ToastContext.Provider value={{ showToast }}>
