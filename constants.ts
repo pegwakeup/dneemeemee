@@ -99,6 +99,13 @@ export const MOCK_AFFILIATE_ITEMS: AffiliateItem[] = [
   }
 ];
 
+export const SCENES = [
+  { id: 'clean', name: 'Sade', style: 'bg-cream' },
+  { id: 'notebook', name: 'Defter', style: 'bg-[#FDFBF7] bg-[radial-gradient(#D4A373_1px,transparent_1px)] [background-size:20px_20px]' },
+  { id: 'dreamy', name: 'Rüya', style: 'bg-gradient-to-br from-pink-100 via-purple-50 to-blue-100' },
+  { id: 'room', name: 'Oda', style: 'bg-[#F0EBE0]' }, 
+];
+
 export const NAV_ITEMS = [
   { id: 'closet', label: 'Dolabım', icon: Shirt },
   { id: 'canvas', label: 'Tuval', icon: Scissors },
