@@ -31,6 +31,7 @@ interface AppState {
 export const useStore = create<AppState>((set) => ({
   closetItems: MOCK_CLOTHING_ITEMS,
   stickers: MOCK_STICKERS,
+  // Default to FREE tier
   userProfile: { ...MOCK_USER, isPremium: false },
   preferences: {
     modestMode: false,

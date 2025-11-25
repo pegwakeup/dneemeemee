@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Camera, Search, X, Check, Loader, Plus, Sparkles } from 'lucide-react';
 import { ClothingItem, FitType } from '../types';
+import { analyzeClothingImage } from '../services/geminiService';
 
 interface AddItemModalProps {
   isOpen: boolean;
@@ -14,55 +15,70 @@ type Step = 'input' | 'scanning' | 'review';
 
 const FITS: FitType[] = ['Dar Kesim', 'Normal', 'Bol Kesim', 'Kısa Kesim'];
 
-// Realistic dummy data for the "Magic" scan flow
-const MOCK_SCANNED_ITEMS = [
-  {
-    name: 'Vintage Kot',
-    category: 'Alt Giyim',
-    imageUrl: 'https://images.unsplash.com/photo-1541099649105-f69ad21f3246?w=500&q=80', 
-    color: 'Mavi',
-    fit: 'Normal' as FitType
-  },
-  {
-    name: 'Pamuklu Tişört',
-    category: 'Üst Giyim',
-    imageUrl: 'https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=500&q=80',
-    color: 'Beyaz',
-    fit: 'Bol Kesim' as FitType
-  },
-  {
-    name: 'Deri Kemer',
-    category: 'Aksesuar',
-    imageUrl: 'https://images.unsplash.com/photo-1553062407-98eeb64c6a62?w=500&q=80',
-    color: 'Kahverengi',
-    fit: 'Normal' as FitType
-  }
-];
-
 const AddItemModal: React.FC<AddItemModalProps> = ({ isOpen, onClose, onAddItems }) => {
   const [activeTab, setActiveTab] = useState<TabType>('scan');
   const [step, setStep] = useState<Step>('input');
   const [uploadedImage, setUploadedImage] = useState<string | null>(null);
+  const [uploadedFile, setUploadedFile] = useState<File | null>(null);
   const [detectedItems, setDetectedItems] = useState<Partial<ClothingItem>[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
 
   if (!isOpen) return null;
 
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const fileToBase64 = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = () => {
+        const result = reader.result as string;
+        // Remove data URL prefix (e.g., "data:image/jpeg;base64,")
+        const base64Data = result.split(',')[1];
+        resolve(base64Data);
+      };
+      reader.onerror = (error) => reject(error);
+    });
+  };
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
-      const url = URL.createObjectURL(e.target.files[0]);
-      setUploadedImage(url);
-      setStep('scanning');
+      const file = e.target.files[0];
+      const url = URL.createObjectURL(file);
       
-      // Simulate "Magic" Scan Delay
-      setTimeout(() => {
-        const newItems = MOCK_SCANNED_ITEMS.map((item, index) => ({
-          id: Date.now().toString() + index,
-          ...item
-        }));
-        setDetectedItems(newItems);
+      setUploadedImage(url);
+      setUploadedFile(file);
+      setStep('scanning');
+
+      try {
+        const base64 = await fileToBase64(file);
+        // Call Real AI Service
+        const aiItems = await analyzeClothingImage(base64);
+        
+        if (aiItems && aiItems.length > 0) {
+          // Hydrate with local ID and the uploaded image URL
+          const newItems = aiItems.map((item, index) => ({
+            id: Date.now().toString() + index,
+            imageUrl: url, // Use the uploaded image for all detected parts
+            fit: 'Normal' as FitType, // Default fit
+            ...item
+          }));
+          setDetectedItems(newItems);
+        } else {
+           // Fallback if AI finds nothing
+           setDetectedItems([{
+             id: Date.now().toString(),
+             name: 'Bilinmeyen Parça',
+             category: 'Diğer',
+             imageUrl: url,
+             color: 'Bilinmiyor',
+             fit: 'Normal' as FitType
+           }]);
+        }
         setStep('review');
-      }, 1500);
+      } catch (error) {
+        console.error("Scan failed", error);
+        setStep('input');
+        // Ideally show toast here
+      }
     }
   };
 
@@ -89,7 +105,7 @@ const AddItemModal: React.FC<AddItemModalProps> = ({ isOpen, onClose, onAddItems
     
     const finalItems = detectedItems.map(item => ({
       ...item,
-      tags: ['yeni', 'taranmış'],
+      tags: item.tags ? [...item.tags, 'yeni', 'taranmış'] : ['yeni', 'taranmış'],
     })) as ClothingItem[];
 
     onAddItems(finalItems);
@@ -99,6 +115,7 @@ const AddItemModal: React.FC<AddItemModalProps> = ({ isOpen, onClose, onAddItems
   const handleClose = () => {
     setStep('input');
     setUploadedImage(null);
+    setUploadedFile(null);
     setDetectedItems([]);
     setSearchQuery('');
     onClose();
@@ -214,7 +231,7 @@ const AddItemModal: React.FC<AddItemModalProps> = ({ isOpen, onClose, onAddItems
                       <Sparkles className="animate-pulse text-latte" size={32} />
                       <div className="flex items-center gap-2">
                          <Loader className="animate-spin" size={16} />
-                         <span>Analiz Ediliyor...</span>
+                         <span>Yapay Zeka Analizi...</span>
                       </div>
                    </div>
                 </div>
@@ -226,7 +243,7 @@ const AddItemModal: React.FC<AddItemModalProps> = ({ isOpen, onClose, onAddItems
               <div className="flex-1 flex flex-col h-full">
                 <div className="flex items-center justify-between mb-4 flex-shrink-0">
                    <h3 className="font-bold text-deep-brown text-xl">
-                       {detectedItems.length === 1 ? 'Ürün Bulundu!' : `${detectedItems.length} Ürün Bulundu!`}
+                       {detectedItems.length === 0 ? 'Sonuç Yok' : `${detectedItems.length} Ürün Bulundu!`}
                    </h3>
                    <span className="text-xs text-sage font-bold bg-sage/20 px-3 py-1 rounded-full text-deep-brown">AI Sihri ✨</span>
                 </div>
@@ -244,6 +261,7 @@ const AddItemModal: React.FC<AddItemModalProps> = ({ isOpen, onClose, onAddItems
                             className="font-bold text-deep-brown bg-transparent border-b border-dashed border-gray-300 focus:border-latte outline-none w-full pb-1 mb-1 truncate"
                           />
                           <p className="text-xs text-warm-grey">{item.category}</p>
+                          <p className="text-[10px] text-gray-400 mt-1">{item.color}</p>
                         </div>
                       </div>
                       

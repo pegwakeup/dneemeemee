@@ -1,9 +1,11 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useStore } from '../store';
-import { Settings, Award, TrendingUp, Shield, Crown } from 'lucide-react';
+import { Settings, Award, TrendingUp, Shield, Crown, Sparkles } from 'lucide-react';
+import SubscriptionModal from '../components/SubscriptionModal';
 
 const Profile: React.FC = () => {
-  const { userProfile, preferences, toggleModestMode, upgradeToPremium } = useStore();
+  const { userProfile, preferences, toggleModestMode } = useStore();
+  const [isSubModalOpen, setIsSubModalOpen] = useState(false);
 
   return (
     <div className="px-6 pt-6 pb-24 h-full overflow-y-auto no-scrollbar">
@@ -21,20 +23,36 @@ const Profile: React.FC = () => {
                 className="w-full h-full rounded-full object-cover border-2 border-white"
                />
                {userProfile.isPremium ? (
-                 <div className="absolute bottom-1 right-1 bg-gradient-to-r from-latte to-yellow-500 text-white p-1.5 rounded-full border-2 border-white shadow-sm">
+                 <div className="absolute bottom-1 right-1 bg-gradient-to-r from-latte to-[#EBC6A4] text-white p-2 rounded-full border-2 border-white shadow-md">
                     <Crown size={16} fill="currentColor" />
                  </div>
                ) : (
-                 <div className="absolute bottom-1 right-1 bg-sage text-white p-1.5 rounded-full border-2 border-white">
-                    <Award size={14} fill="currentColor" />
+                 <div className="absolute bottom-1 right-1 bg-gray-300 text-white p-2 rounded-full border-2 border-white shadow-sm">
+                    <Award size={16} />
                  </div>
                )}
            </div>
-           <h1 className="text-2xl font-bold text-deep-brown">{userProfile.name}</h1>
-           {userProfile.isPremium && (
-             <span className="text-[10px] bg-gradient-to-r from-latte to-[#EBC6A4] text-white px-3 py-0.5 rounded-full font-bold mb-2 shadow-sm">Clouzy+ Üyesi</span>
+           
+           <h1 className="text-2xl font-extrabold text-deep-brown mb-2">{userProfile.name}</h1>
+           
+           {/* Plan Badge / Upgrade Button */}
+           {userProfile.isPremium ? (
+               <div className="flex items-center gap-2 bg-gradient-to-r from-latte to-[#EBC6A4] text-white px-4 py-1.5 rounded-full shadow-latte-glow">
+                   <Crown size={14} fill="currentColor" />
+                   <span className="text-xs font-bold tracking-wide">Clouzy+ Üyesi</span>
+               </div>
+           ) : (
+               <div className="flex flex-col items-center gap-3">
+                   <span className="text-xs font-bold text-gray-400 bg-gray-100 px-3 py-1 rounded-full">Ücretsiz Plan</span>
+                   <button 
+                    onClick={() => setIsSubModalOpen(true)}
+                    className="bg-latte text-white text-xs font-bold px-6 py-2 rounded-xl shadow-clay hover:bg-[#C29263] transition-colors flex items-center gap-2"
+                   >
+                       <Sparkles size={12} fill="currentColor" />
+                       Clouzy+ 'a Yükselt
+                   </button>
+               </div>
            )}
-           <p className="text-sage font-bold text-sm bg-sage/20 px-3 py-1 rounded-full text-deep-brown">Moda Tutkunu</p>
        </div>
 
        {/* Settings Card */}
@@ -114,7 +132,7 @@ const Profile: React.FC = () => {
        {/* Banner for non-premium */}
        {!userProfile.isPremium && (
           <div 
-            onClick={upgradeToPremium}
+            onClick={() => setIsSubModalOpen(true)}
             className="bg-gradient-to-r from-deep-brown to-gray-800 rounded-3xl p-6 relative overflow-hidden shadow-xl cursor-pointer"
           >
              <div className="relative z-10">
@@ -125,6 +143,9 @@ const Profile: React.FC = () => {
              <Crown className="absolute -bottom-4 -right-4 text-white/10 w-32 h-32 rotate-12" />
           </div>
        )}
+
+       {/* Subscription Modal */}
+       <SubscriptionModal isOpen={isSubModalOpen} onClose={() => setIsSubModalOpen(false)} />
     </div>
   );
 };
