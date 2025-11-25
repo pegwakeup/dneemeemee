@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Clouzy - Cozy Fashion Assistant</title>
+    
+    <!-- Google Fonts: Nunito for that rounded, friendly vibe -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Tailwind Config for Clouzy Theme (Pinterest/Organic Vibe) -->
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              cream: '#F9F7F2',       // Warm Alabaster/Paper
+              latte: '#D4A373',       // Primary Accent (Camel/Soft Latte)
+              sage: '#CCD5AE',        // Secondary Accent (Fresh Green)
+              'deep-brown': '#4A4238',// Main Text (Softened dark brown)
+              'warm-grey': '#8C8680', // Subtext
+              'clay-shadow': '#E6E2D8', // Warm shadow
+              'clay-highlight': '#FFFFFF',
+            },
+            fontFamily: {
+              sans: ['Nunito', 'sans-serif'],
+            },
+            boxShadow: {
+              'clay': '8px 8px 16px #E6E2D8, -8px -8px 16px #FFFFFF',
+              'clay-sm': '4px 4px 8px #E6E2D8, -4px -4px 8px #FFFFFF',
+              'clay-inset': 'inset 4px 4px 8px #E6E2D8, inset -4px -4px 8px #FFFFFF',
+              'latte-glow': '0 4px 14px 0 rgba(212, 163, 115, 0.39)',
+            }
+          }
+        }
+      }
+    </script>
+    
+    <style>
+      body {
+        background-color: #F9F7F2;
+        color: #4A4238;
+      }
+      /* Hide scrollbar for clean UI but allow scrolling */
+      .no-scrollbar::-webkit-scrollbar {
+        display: none;
+      }
+      .no-scrollbar {
+        -ms-overflow-style: none;
+        scrollbar-width: none;
+      }
+    </style>
+  <script type="importmap">
+{
+  "imports": {
+    "react": "https://aistudiocdn.com/react@^19.2.0",
+    "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.0/",
+    "react/": "https://aistudiocdn.com/react@^19.2.0/",
+    "@google/genai": "https://aistudiocdn.com/@google/genai@^1.30.0",
+    "framer-motion": "https://aistudiocdn.com/framer-motion@^12.23.24",
+    "lucide-react": "https://aistudiocdn.com/lucide-react@^0.554.0",
+    "zustand": "https://aistudiocdn.com/zustand@^5.0.3"
+  }
+}
+</script>
+</head>
+  <body>
+    <div id="root"></div>
+  </body>
+</html>

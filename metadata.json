@@ -1,0 +1,7 @@
+{
+  "name": "Copy of Clouzy",
+  "description": "A cozy, stress-free fashion assistant and digital closet.",
+  "requestFramePermissions": [
+    "camera"
+  ]
+}
