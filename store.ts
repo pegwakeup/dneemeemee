@@ -5,7 +5,10 @@ import { MOCK_CLOTHING_ITEMS, MOCK_STICKERS, MOCK_USER, SCENES } from './constan
 interface AppState {
   closetItems: ClothingItem[];
   stickers: StickerItem[];
-  userProfile: UserProfile;
+  userProfile: UserProfile & { isPremium: boolean };
+  preferences: {
+    modestMode: boolean;
+  };
   
   // Canvas State
   canvasItems: CanvasItem[];
@@ -14,6 +17,8 @@ interface AppState {
   // Actions
   addClosetItems: (items: ClothingItem[]) => void;
   updateProfileStats: (points: number) => void;
+  upgradeToPremium: () => void;
+  toggleModestMode: () => void;
   
   // Canvas Actions
   addCanvasItem: (item: CanvasItem) => void;
@@ -26,7 +31,10 @@ interface AppState {
 export const useStore = create<AppState>((set) => ({
   closetItems: MOCK_CLOTHING_ITEMS,
   stickers: MOCK_STICKERS,
-  userProfile: MOCK_USER,
+  userProfile: { ...MOCK_USER, isPremium: false },
+  preferences: {
+    modestMode: false,
+  },
   
   canvasItems: [],
   activeScene: SCENES[0].id,
@@ -40,6 +48,16 @@ export const useStore = create<AppState>((set) => ({
         ...state.userProfile,
         stylePoints: state.userProfile.stylePoints + points
       }
+    })),
+
+  upgradeToPremium: () => 
+    set((state) => ({
+      userProfile: { ...state.userProfile, isPremium: true }
+    })),
+
+  toggleModestMode: () =>
+    set((state) => ({
+      preferences: { ...state.preferences, modestMode: !state.preferences.modestMode }
     })),
 
   addCanvasItem: (item) => 

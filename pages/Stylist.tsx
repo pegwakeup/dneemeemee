@@ -1,14 +1,23 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Sparkles, Send, ShoppingBag, ExternalLink } from 'lucide-react';
-import { getCommercialOutfitRecommendation } from '../services/geminiService';
+import { Sparkles, Send, ShoppingBag, ExternalLink, Plane, X, Check } from 'lucide-react';
+import { getCommercialOutfitRecommendation, getTravelPackingList } from '../services/geminiService';
 import { ChatMessage } from '../types';
 import { useStore } from '../store';
+import SubscriptionModal from '../components/SubscriptionModal';
+import { motion, AnimatePresence } from 'framer-motion';
 
 const Stylist: React.FC = () => {
-  const { closetItems } = useStore();
+  const { closetItems, preferences, userProfile } = useStore();
   const [prompt, setPrompt] = useState('');
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [loading, setLoading] = useState(false);
+  
+  // Modal States
+  const [isSubModalOpen, setIsSubModalOpen] = useState(false);
+  const [isTravelModalOpen, setIsTravelModalOpen] = useState(false);
+  const [destination, setDestination] = useState('');
+  const [days, setDays] = useState(3);
+
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const scrollToBottom = () => {
@@ -28,8 +37,12 @@ const Stylist: React.FC = () => {
     setPrompt('');
     setLoading(true);
     
-    // Call Commercial Service
-    const result = await getCommercialOutfitRecommendation(userMsg.content, closetItems);
+    // Call Commercial Service with Modest Mode
+    const result = await getCommercialOutfitRecommendation(
+        userMsg.content, 
+        closetItems, 
+        preferences.modestMode
+    );
     
     const aiMsg: ChatMessage = { 
         role: 'assistant', 
@@ -42,22 +55,71 @@ const Stylist: React.FC = () => {
     setLoading(false);
   };
 
+  // --- Travel Logic ---
+  const handleTravelClick = () => {
+      if (userProfile.isPremium) {
+          setIsTravelModalOpen(true);
+      } else {
+          setIsSubModalOpen(true);
+      }
+  };
+
+  const handleGeneratePackingList = async () => {
+      setIsTravelModalOpen(false);
+      setLoading(true);
+      
+      const userMsg: ChatMessage = { 
+          role: 'user', 
+          content: `${days} günlüğüne ${destination} için bavul hazırlamak istiyorum.` 
+      };
+      setMessages(prev => [...prev, userMsg]);
+
+      const resultText = await getTravelPackingList(
+          destination, 
+          days, 
+          closetItems, 
+          preferences.modestMode
+      );
+
+      const aiMsg: ChatMessage = {
+          role: 'assistant',
+          content: resultText
+      };
+      
+      setMessages(prev => [...prev, aiMsg]);
+      setLoading(false);
+      setDestination('');
+  };
+
   return (
     <div className="px-6 pt-6 pb-24 h-full flex flex-col">
-       <div className="mb-4 text-center">
-          <div className="w-14 h-14 bg-gradient-to-br from-latte to-cream rounded-full mx-auto mb-2 shadow-clay flex items-center justify-center">
-            <Sparkles className="text-white" size={28} />
+       {/* Header with Travel Button */}
+       <div className="mb-4 flex items-center justify-between relative">
+          <div className="w-10"></div> {/* Spacer */}
+          <div className="text-center">
+            <h1 className="text-xl font-extrabold text-deep-brown flex items-center justify-center gap-2">
+                Clouzy Stilist 
+                {preferences.modestMode && <span className="text-[10px] bg-sage/20 text-sage px-2 py-0.5 rounded-full">Modest</span>}
+            </h1>
           </div>
-          <h1 className="text-xl font-extrabold text-deep-brown">Clouzy Stilist</h1>
-          <p className="text-xs text-warm-grey">Kişisel alışveriş asistanın hazır! ✨</p>
+          <button 
+            onClick={handleTravelClick}
+            className="p-2 bg-white rounded-xl shadow-clay text-latte hover:bg-latte hover:text-white transition-colors"
+            title="Bavul Modu"
+          >
+              <Plane size={20} />
+          </button>
        </div>
 
        <div className="flex-1 rounded-3xl mb-4 overflow-y-auto relative space-y-6 p-2 no-scrollbar">
          {messages.length === 0 && !loading && (
              <div className="absolute inset-0 flex items-center justify-center text-gray-300 text-sm p-8 text-center flex-col gap-4 opacity-50">
-                <p>Şöyle sorabilirsin:</p>
+                <div className="w-16 h-16 bg-cream rounded-full flex items-center justify-center mb-2 shadow-inner">
+                    <Sparkles className="text-latte" size={32} />
+                </div>
+                <p>Moda, kombin ve bavul önerileri için buradayım!</p>
                 <div className="bg-white p-3 rounded-2xl shadow-sm text-xs text-warm-grey">"Hafta sonu kahvaltıya gidiyorum."</div>
-                <div className="bg-white p-3 rounded-2xl shadow-sm text-xs text-warm-grey">"İlk buluşma için ne giymeliyim?"</div>
+                <div className="bg-white p-3 rounded-2xl shadow-sm text-xs text-warm-grey">"Sağ üstteki uçağa tıkla!" ↗️</div>
              </div>
          )}
          
@@ -112,7 +174,7 @@ const Stylist: React.FC = () => {
                      )}
 
                      {/* 3. Text Response */}
-                     <div className="bg-white text-deep-brown p-4 rounded-2xl rounded-tl-none border border-gray-100 shadow-sm text-sm leading-relaxed">
+                     <div className="bg-white text-deep-brown p-4 rounded-2xl rounded-tl-none border border-gray-100 shadow-sm text-sm leading-relaxed whitespace-pre-wrap">
                        {msg.content}
                      </div>
                    </div>
@@ -156,6 +218,61 @@ const Stylist: React.FC = () => {
              <Send size={18} />
          </button>
        </div>
+
+       {/* MODALS */}
+       <SubscriptionModal isOpen={isSubModalOpen} onClose={() => setIsSubModalOpen(false)} />
+       
+       {/* Travel Planner Input Modal */}
+       <AnimatePresence>
+         {isTravelModalOpen && (
+           <div className="fixed inset-0 z-50 flex items-center justify-center p-6">
+              <motion.div 
+                 initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                 className="absolute inset-0 bg-deep-brown/40 backdrop-blur-sm"
+                 onClick={() => setIsTravelModalOpen(false)}
+              />
+              <motion.div 
+                 initial={{ scale: 0.9, y: 20 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.9, y: 20 }}
+                 className="relative w-full max-w-sm bg-cream rounded-3xl p-6 shadow-2xl z-10"
+              >
+                  <h3 className="text-xl font-extrabold text-deep-brown mb-4 flex items-center gap-2">
+                     <Plane className="text-latte" /> Bavul Modu
+                  </h3>
+                  
+                  <div className="space-y-4 mb-6">
+                     <div>
+                        <label className="text-xs font-bold text-warm-grey ml-2">Nereye Gidiyorsun?</label>
+                        <input 
+                           value={destination}
+                           onChange={(e) => setDestination(e.target.value)}
+                           className="w-full p-4 bg-white rounded-2xl shadow-sm outline-none focus:ring-2 focus:ring-latte/30 text-deep-brown"
+                           placeholder="Örn: Bodrum, Paris..."
+                        />
+                     </div>
+                     <div>
+                        <label className="text-xs font-bold text-warm-grey ml-2">Kaç Günlük?</label>
+                        <div className="flex items-center gap-4 bg-white p-2 rounded-2xl shadow-sm">
+                           <input 
+                              type="range" min="1" max="14" 
+                              value={days} onChange={(e) => setDays(Number(e.target.value))}
+                              className="flex-1 accent-latte h-2 bg-gray-100 rounded-full appearance-none cursor-pointer"
+                           />
+                           <span className="font-extrabold text-latte w-12 text-center">{days} Gün</span>
+                        </div>
+                     </div>
+                  </div>
+
+                  <button 
+                     onClick={handleGeneratePackingList}
+                     disabled={!destination}
+                     className="w-full py-4 bg-latte text-white rounded-2xl font-bold shadow-latte-glow hover:bg-[#C29263] active:scale-95 transition-all disabled:opacity-50"
+                  >
+                     Listeyi Hazırla ✨
+                  </button>
+              </motion.div>
+           </div>
+         )}
+       </AnimatePresence>
     </div>
   );
 };

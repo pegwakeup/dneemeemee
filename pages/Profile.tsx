@@ -1,8 +1,10 @@
 import React from 'react';
-import { MOCK_USER } from '../constants';
-import { Settings, Award, TrendingUp } from 'lucide-react';
+import { useStore } from '../store';
+import { Settings, Award, TrendingUp, Shield, Crown } from 'lucide-react';
 
 const Profile: React.FC = () => {
+  const { userProfile, preferences, toggleModestMode, upgradeToPremium } = useStore();
+
   return (
     <div className="px-6 pt-6 pb-24 h-full overflow-y-auto no-scrollbar">
        <div className="flex justify-end mb-4">
@@ -18,12 +20,44 @@ const Profile: React.FC = () => {
                 alt="Profil" 
                 className="w-full h-full rounded-full object-cover border-2 border-white"
                />
-               <div className="absolute bottom-1 right-1 bg-latte text-white p-1.5 rounded-full border-2 border-white">
-                  <Award size={14} fill="currentColor" />
-               </div>
+               {userProfile.isPremium ? (
+                 <div className="absolute bottom-1 right-1 bg-gradient-to-r from-latte to-yellow-500 text-white p-1.5 rounded-full border-2 border-white shadow-sm">
+                    <Crown size={16} fill="currentColor" />
+                 </div>
+               ) : (
+                 <div className="absolute bottom-1 right-1 bg-sage text-white p-1.5 rounded-full border-2 border-white">
+                    <Award size={14} fill="currentColor" />
+                 </div>
+               )}
            </div>
-           <h1 className="text-2xl font-bold text-deep-brown">{MOCK_USER.name}</h1>
-           <p className="text-sage font-bold text-sm bg-sage/20 px-3 py-1 rounded-full mt-2 text-deep-brown">Moda Tutkunu</p>
+           <h1 className="text-2xl font-bold text-deep-brown">{userProfile.name}</h1>
+           {userProfile.isPremium && (
+             <span className="text-[10px] bg-gradient-to-r from-latte to-[#EBC6A4] text-white px-3 py-0.5 rounded-full font-bold mb-2 shadow-sm">Clouzy+ Üyesi</span>
+           )}
+           <p className="text-sage font-bold text-sm bg-sage/20 px-3 py-1 rounded-full text-deep-brown">Moda Tutkunu</p>
+       </div>
+
+       {/* Settings Card */}
+       <div className="bg-white rounded-3xl p-4 shadow-clay mb-6 border border-gray-50">
+          <h3 className="text-sm font-bold text-deep-brown mb-4 px-2">Tercihler</h3>
+          
+          <div className="flex items-center justify-between p-3 bg-cream rounded-2xl mb-2">
+             <div className="flex items-center gap-3">
+                <div className="p-2 bg-sage/20 text-sage rounded-full">
+                  <Shield size={18} />
+                </div>
+                <div>
+                  <p className="text-sm font-bold text-deep-brown">Muhafazakar Giyim</p>
+                  <p className="text-[10px] text-warm-grey">Daha kapalı öneriler</p>
+                </div>
+             </div>
+             <button 
+               onClick={toggleModestMode}
+               className={`w-12 h-7 rounded-full transition-colors flex items-center px-1 ${preferences.modestMode ? 'bg-sage' : 'bg-gray-200'}`}
+             >
+                <div className={`w-5 h-5 bg-white rounded-full shadow-sm transition-transform ${preferences.modestMode ? 'translate-x-5' : 'translate-x-0'}`} />
+             </button>
+          </div>
        </div>
 
        <div className="grid grid-cols-2 gap-4 mb-8">
@@ -33,7 +67,7 @@ const Profile: React.FC = () => {
                </div>
                <Award className="text-yellow-500 mb-2 self-start" size={24} />
                <div className="self-start">
-                   <span className="text-3xl font-extrabold text-deep-brown block">{MOCK_USER.stylePoints}</span>
+                   <span className="text-3xl font-extrabold text-deep-brown block">{userProfile.stylePoints}</span>
                    <span className="text-[10px] text-warm-grey uppercase tracking-widest font-bold">Stil Puanı</span>
                </div>
            </div>
@@ -43,19 +77,18 @@ const Profile: React.FC = () => {
                </div>
                <TrendingUp className="text-latte mb-2 self-start" size={24} />
                <div className="self-start">
-                   <span className="text-3xl font-extrabold text-deep-brown block">{MOCK_USER.outfitsCreated}</span>
+                   <span className="text-3xl font-extrabold text-deep-brown block">{userProfile.outfitsCreated}</span>
                    <span className="text-[10px] text-warm-grey uppercase tracking-widest font-bold">Kombinler</span>
                </div>
            </div>
        </div>
        
-       <div className="bg-white rounded-[2rem] shadow-clay p-6 relative overflow-hidden">
+       <div className="bg-white rounded-[2rem] shadow-clay p-6 relative overflow-hidden mb-8">
            <div className="flex justify-between items-center mb-6">
                 <h3 className="font-bold text-deep-brown text-lg">Haftalık Aktivite</h3>
                 <span className="text-xs font-bold text-warm-grey bg-gray-50 px-2 py-1 rounded-lg">Son 7 Gün</span>
            </div>
            
-           {/* CSS Bar Chart */}
            <div className="h-40 flex items-end justify-between gap-3 px-1">
               {[35, 60, 45, 80, 55, 90, 40].map((height, index) => (
                 <div key={index} className="flex flex-col items-center gap-2 w-full group">
@@ -68,10 +101,6 @@ const Profile: React.FC = () => {
                                 : 'bg-gradient-to-t from-gray-100 to-gray-200'
                             }`}
                         >
-                            {/* Tooltip */}
-                            <div className="absolute -top-8 left-1/2 -translate-x-1/2 bg-deep-brown text-white text-[10px] py-1 px-2 rounded opacity-0 group-hover:opacity-100 transition-opacity">
-                                {height}
-                            </div>
                         </div>
                     </div>
                     <span className={`text-[10px] font-bold ${index === 5 ? 'text-latte' : 'text-gray-300'}`}>
@@ -81,6 +110,21 @@ const Profile: React.FC = () => {
               ))}
            </div>
        </div>
+
+       {/* Banner for non-premium */}
+       {!userProfile.isPremium && (
+          <div 
+            onClick={upgradeToPremium}
+            className="bg-gradient-to-r from-deep-brown to-gray-800 rounded-3xl p-6 relative overflow-hidden shadow-xl cursor-pointer"
+          >
+             <div className="relative z-10">
+               <h3 className="text-white font-bold text-lg mb-1">Clouzy+'a Yükselt</h3>
+               <p className="text-gray-300 text-xs mb-3">Tüm özelliklerin kilidini aç.</p>
+               <span className="bg-white text-deep-brown px-4 py-2 rounded-xl text-xs font-bold">İncele</span>
+             </div>
+             <Crown className="absolute -bottom-4 -right-4 text-white/10 w-32 h-32 rotate-12" />
+          </div>
+       )}
     </div>
   );
 };

@@ -13,7 +13,8 @@ interface CommercialRecommendation {
 
 export const getCommercialOutfitRecommendation = async (
   userQuery: string, 
-  closetItems: ClothingItem[]
+  closetItems: ClothingItem[],
+  isModest: boolean = false
 ): Promise<CommercialRecommendation> => {
   try {
     const model = 'gemini-2.5-flash'; 
@@ -31,8 +32,14 @@ export const getCommercialOutfitRecommendation = async (
 
     const availableNames = selectedOutfit.map(i => i.name).join(', ');
 
+    const modestInstruction = isModest 
+      ? "ÖNEMLİ: Kullanıcı 'Muhafazakar Giyim (Tesettür)' tercih ediyor. Önerilerini buna göre yap. Daha kapalı, katmanlı ve ölçülü kombinler öner. Eğer seçilen parçalar uygun değilse, nasıl uygun hale getirilebileceğini (örneğin 'içine boğazlı kazak giyerek' veya 'üzerine uzun bir trençkot alarak') anlat." 
+      : "";
+
     const prompt = `
       Senin adın Clouzy, çok samimi ve yardımsever bir moda asistanısın. Türkçe konuşuyorsun.
+      ${modestInstruction}
+      
       Kullanıcının dolabından şu parçaları seçtik: ${availableNames}.
       Ayrıca, kombini tamamlamak için şu parça öneriliyor: ${missingItem.name} (${missingItem.description}).
       
@@ -63,5 +70,38 @@ export const getCommercialOutfitRecommendation = async (
         outfitItems: [],
         missingItem: MOCK_AFFILIATE_ITEMS[0]
     };
+  }
+};
+
+export const getTravelPackingList = async (
+  destination: string,
+  days: number,
+  closetItems: ClothingItem[],
+  isModest: boolean = false
+): Promise<string> => {
+  try {
+    const availableItems = closetItems.map(i => `${i.name} (${i.category})`).join(', ');
+    const modestInstruction = isModest ? "Kullanıcı muhafazakar giyiniyor, buna uygun parçalar seç." : "";
+
+    const prompt = `
+      Görevin bir bavul hazırlama asistanı olmak.
+      Kullanıcı ${days} günlüğüne ${destination} konumuna gidiyor.
+      Dolabındaki eşyalar: ${availableItems}.
+      ${modestInstruction}
+      
+      Lütfen bu seyahat için dolabından alması gerekenlerin maddeli bir listesini oluştur.
+      Ayrıca yanına alması gereken ama dolabında olmayan 1-2 temel eşyayı da (diş fırçası, şarj aleti gibi) hatırlat.
+      Samimi ve heyecanlı bir dil kullan.
+    `;
+
+    const response = await ai.models.generateContent({
+      model: 'gemini-2.5-flash',
+      contents: prompt,
+    });
+
+    return response.text || "İyi yolculuklar! Bavulunu hazırlarken hava durumunu kontrol etmeyi unutma.";
+  } catch (error) {
+    console.error(error);
+    return "Bağlantı hatası oluştu ama sen en sevdiğin parçaları almayı unutma! ✈️";
   }
 };
